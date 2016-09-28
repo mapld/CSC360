@@ -5,6 +5,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#define MAX_ARGS 30
+
 
 int bg(char** parmList)
 {
@@ -27,7 +29,8 @@ int main(void)
       input = readline(prompt);
 
       char command[40];
-      char* parmList[30] = {};
+
+      char* parmList[MAX_ARGS] = {};
 
       char* token;
       token = strtok(input, " ");
@@ -49,16 +52,27 @@ int main(void)
           strcpy(parmList[i], token);
           token = strtok(NULL, " ");
           i++;
+          if(i >= MAX_ARGS)
+            {
+              printf("WARNING: Too many arguments\n");
+              break;
+            }
         }
-      /* parmList[i] = (char*) NULL; */
 
-      if (strcmp(command,"bg"))
+      if (strcmp(command,"bg") == 0)
         {
-          bg(parmList);
+          if(parmList[0] == NULL)
+            {
+              printf("Please enter a command to run after bg");
+            }
+          else
+            {
+              bg(parmList);
+            }
         }
       else
         {
-          printf("Invalid command: %s" , command);
+          printf("Invalid command: %s\n" , command);
         }
     }
 
