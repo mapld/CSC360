@@ -1,0 +1,6 @@
+This program simulates a series of flows using threads, mutexes and condition variables. 
+
+To run the program, first run the command "make"
+Then run ./MFS flow.txt
+
+Replace flow.txt with any input file of the correct format
