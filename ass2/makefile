@@ -1,6 +1,6 @@
 .phony all:
 all: main.c
-	gcc -g main.c -lreadline -o MFS
+	gcc -g main.c -lreadline -lpthread -o MFS
 
 .phony clean:
 clean:
