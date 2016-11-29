@@ -46,9 +46,15 @@ int main(int argc, char** argv)
 
   while(FAT_val < 0xFF8)
     {
-      if(FAT_val == 0x00 || FAT_val > 0xFF0)
+      if(FAT_val > 0xFF0)
         {
           printf("Hit bad cluster in FAT table. Exiting.\n");
+          exit(1);
+        }
+
+      if(FAT_val == 0x00)
+        {
+          printf("Hit empty cluster. Exiting.\n");
           exit(1);
         }
 
@@ -60,4 +66,5 @@ int main(int argc, char** argv)
     }
 
   fclose(fptr);
+  closeDisk(&di);
 }

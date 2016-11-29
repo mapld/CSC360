@@ -17,6 +17,7 @@
 #define FILENAME_SIZE 8
 #define EXTENSION_SIZE 3
 #define PAGE_SIZE 512
+#define MAX_FAT_VAL PAGE_SIZE*9 
 
 typedef unsigned int uint;
 
@@ -88,6 +89,40 @@ int getFileName(DirEntry entry, char* buf)
   return i;
 }
 
+void writeFileName(DirEntry* entry, char* fname)
+{
+  memset(&entry->filename,' ',FILENAME_SIZE);
+  memset(&entry->extension,' ',EXTENSION_SIZE);
+
+  int i;
+  int j;
+  for(i = 0; i <= FILENAME_SIZE; i++)
+    {
+      char cur = fname[i];
+      if(cur == '.')
+        {
+          i++;
+          break;
+        }
+      else if (cur == '\0')
+        {
+          return;
+        }
+      else
+        {
+          entry->filename[i] = cur;
+        }
+    }
+
+  for(j = 0; j < EXTENSION_SIZE; j++, i++)
+    {
+      char cur = fname[i];
+      if(cur == '\0')
+        return;
+      entry->extension[j] = cur;
+    }
+}
+
 // Gets a fixed series of characters from disk and adds null terminator
 void readStr(char* src, off_t loc, char* dst, int len)
 {
@@ -114,7 +149,7 @@ uint16_t readVal16(char* pt)
   return (int)*(pt+1) + ((int)*pt << 8);
 }
 
-uint16_t readFatVal(char* data, int index)
+uint16_t readFatVal(char* data, uint16_t index)
 {
   uint16_t high;
   uint16_t low;
@@ -132,6 +167,50 @@ uint16_t readFatVal(char* data, int index)
 
   return high + low;
 }
+
+void writeFatVal(char* data, uint16_t index, uint16_t val)
+{
+  uint16_t high;
+  uint16_t low;
+  char* hptr;
+  char* lptr;
+
+
+  if(index % 2) // odd case
+    {
+      high = (val & 0x0FF0) >> 4;
+      low = (val & 0x000F);
+
+      hptr = (data + 512 + 1 + 3*index/2);
+      lptr = (data + 512 + (3*index/2));
+
+      *hptr = high;
+      *lptr = (low << 4) + (*lptr & 0x0F);
+    }
+  else         // even case
+    {
+      high = (val & 0x0F00) >> 8;
+      low = (val & 0x00FF);
+
+      hptr = (data + 512 + 1 + (3*index/2));
+      lptr = (data + 512 + 3*index/2);
+
+      *lptr = (char)low;
+      *hptr = (high) + (*hptr & 0xF0);
+    }
+}
+
+uint16_t seekEmptyFAT(char* data, uint16_t index)
+{
+  uint16_t i;
+  for(i = index; i < PAGE_SIZE * 9; i++)
+    {
+      if(!readFatVal(data, i))
+        return i;
+    }
+  return 0;
+}
+
 void openDisk(char* fn, DiskInfo* di)
 {
   di->fd = open(fn, O_RDWR);
@@ -142,7 +221,7 @@ void openDisk(char* fn, DiskInfo* di)
     }
   di->disk_size = getFileSize(fn);
 
-  di->data = mmap(0, di->disk_size, PROT_READ, MAP_SHARED, di->fd, 0);
+  di->data = mmap(0, di->disk_size, PROT_READ | PROT_WRITE, MAP_SHARED, di->fd, 0);
   if ( di->data == MAP_FAILED)
     {
       printf("Memory map failed with error: %s\n", strerror(errno));
