@@ -119,7 +119,6 @@ uint16_t readFatVal(char* data, int index)
   uint16_t high;
   uint16_t low;
 
-  printf("index: %u\n", index);
   if(index % 2) // odd case
     {
       high = *(data + 512 + 1 + (3*index/2)) << 4;
@@ -128,18 +127,14 @@ uint16_t readFatVal(char* data, int index)
   else         // even case
     {
       high = (*(data + 512 + 1 + (3*index/2)) & 0x0F) << 8;
-      printf("high: %u\n", high);
       low = (*(data + 512 + (3*index/2)) & 0x00FF);
-      printf("low: %u\n", low);
     }
 
-  printf("test3\n");
   return high + low;
-  printf("test3\n");
 }
 void openDisk(char* fn, DiskInfo* di)
 {
-  di->fd = open(fn, O_RDONLY);
+  di->fd = open(fn, O_RDWR);
   if ( di->fd < 0)
     {
       printf("Failed to open file with error: %s\n", strerror(errno));
